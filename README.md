@@ -96,5 +96,6 @@ http://127.0.0.1:5000/
 - STIX support for interoperability.
 
 ## Author
+Additional expert source in (my book)[https://www.routledge.com/Propaganda-From-Disinformation-and-Influence-to-Operations-and-Information-Warfare/Olejnik/p/book/9781032813721?s] 
 
 me@lukaszolejnik.com
