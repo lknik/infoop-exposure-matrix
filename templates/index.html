@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FIMI Operation Analyzer</title>
+  <script src="{{ url_for('static', filename='logic.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+  <h1>FIMI Operation Analyzer</h1>
+  <div id="notifier" class="notifier"></div>
+
+
+  <!-- OPERATION MANAGEMENT -->
+  <section>
+    <h2>Create New Operation</h2>
+    <label>Name: <input type="text" id="op_name"></label><br>
+    <label>Description: <input type="text" id="op_description"></label><br>
+    <label>Suspected Actor: <input type="text" id="op_actor"></label><br>
+    <label>Region: <input type="text" id="op_region"></label><br>
+    <label>Time Range: <input type="text" id="op_range"></label><br>
+    <button onclick="createOperation()">Create Operation</button>
+    <hr>
+    <h3>Or Load Existing Operation</h3>
+    <select id="op_select" onchange="loadOperation()"></select>
+    <button onclick="deleteOperation()">Delete Current Operation</button>
+
+  </section>
+
+  <!-- CHANNELS -->
+  <section>
+    <h2>Add Channel to Operation</h2>
+    <label>Name: <input type="text" id="ch_name"></label><br>
+    <label>Platform: <input type="text" id="ch_platform"></label><br>
+    <label>URL: <input type="text" id="ch_url"></label><br>
+    <label>Notes: <input type="text" id="ch_notes"></label><br>
+    <button onclick="addChannel()">Add Channel</button>
+    <div id="channel_list"></div>
+  </section>
+
+  <!-- INDICATORS -->
+  <section>
+    <h2>Add Structured Indicator to Channel</h2>
+    <label>Channel: <select id="ind_channel"></select></label><br>
+    <label>Group:
+      <select id="ind_group">
+        <option value="">--</option>
+        <option value="technical">Technical</option>
+        <option value="behavioral">Behavioral</option>
+      </select>
+    </label><br>
+    <label>Category:
+      <select id="ind_category"></select>
+    </label><br>
+    <label>Subtype:
+      <select id="ind_subtype"></select>
+    </label><br>
+    <label>Weight: <input type="number" id="ind_weight" readonly></label><br>
+    <label>Confidence: <input type="text" id="ind_conf" readonly></label><br>
+    <label>Evidence: <textarea id="ind_evidence" rows="2"></textarea></label><br>
+    <label>Source Type: <input type="text" id="ind_source"></label><br>
+    <button onclick="addIndicator()">Add Indicator</button>
+    <div id="indicators_view"></div>
+  </section>
+  
+  <!-- RELATIONSHIPS -->
+  <section>
+    <h2>Link Channels</h2>
+    <label>From: <select id="link_from"></select></label>
+    <label>To: <select id="link_to"></select></label><br>
+    <label>Type of Link: <input type="text" id="link_type"></label><br>
+    <label>Confidence: <input type="text" id="link_conf"></label><br>
+    <label>Evidence: <textarea id="link_evidence" rows="2"></textarea></label><br>
+    <button onclick="addLink()">Add Link</button>
+    <div id="link_view"></div>
+  </section>
+
+  <!-- CLASSIFY -->
+
+  <section>
+    <h2>Classification & Exposure Matrix</h2>
+    <button onclick="runClassification()">Classify Operation</button>
+    <div id="classification_results"></div>
+    <h3>Visual Exposure Matrix</h3>
+<div id="matrix_grid" class="matrix-grid"></div>
+
+  </section>
+  
+  <section>
+    <h2>Generate Analyst Report</h2>
+    <label>Analyst Comments:</label><br>
+    <textarea id="analyst_notes" rows="4" placeholder="Add analyst context or interpretation..."></textarea><br>
+    <button onclick="generateReport()">Generate Report</button>
+    <div id="report_output_container" style="margin-top: 15px;">
+      <h3>Generated Report:</h3>
+      <textarea id="llm_report_output" rows="15" readonly style="width:100%; font-family:monospace;"></textarea>
+    </div>
+  </section>
+  
+  
+
+</div>
+</body>
+</html>

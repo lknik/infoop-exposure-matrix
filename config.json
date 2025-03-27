@@ -1,0 +1,106 @@
+{
+  "technical_indicators": [
+    {
+      "name": "public affiliation",
+      "weight": 2
+    },
+    {
+      "name": "financial records",
+      "weight": 2
+    },
+    {
+      "name": "backend data",
+      "weight": 2
+    },
+    {
+      "name": "IP addresses",
+      "weight": 2
+    },
+    {
+      "name": "hosting services",
+      "weight": 2
+    },
+    {
+      "name": "domain ownership",
+      "weight": 2
+    },
+    {
+      "name": "metadata analysis of files",
+      "weight": 2
+    },
+    {
+      "name": "geolocation",
+      "weight": 2
+    },
+    {
+      "name": "ad networks",
+      "weight": 2
+    },
+    {
+      "name": "cryptocurrency wallets",
+      "weight": 2
+    },
+    {
+      "name": "matching patterns in account creation",
+      "weight": 2
+    },
+    {
+      "name": "use of same code/templates",
+      "weight": 2
+    },
+    {
+      "name": "autonomous system numbers",
+      "weight": 2
+    },
+    {
+      "name": "social credit numbers",
+      "weight": 2
+    },
+    {
+      "name": "indexed or archived internet content",
+      "weight": 2
+    }
+  ],
+  "behavioral_indicators": [
+    {
+      "name": "persistent backlinking",
+      "weight": 1
+    },
+    {
+      "name": "reiterated engagement",
+      "weight": 1
+    },
+    {
+      "name": "inauthentic or AI-generated accounts",
+      "weight": 1
+    },
+    {
+      "name": "linguistic patterns",
+      "weight": 1
+    },
+    {
+      "name": "synchronized publishing",
+      "weight": 1
+    },
+    {
+      "name": "agenda-setting and cross-posting",
+      "weight": 1
+    },
+    {
+      "name": "AI-generated content",
+      "weight": 1
+    },
+    {
+      "name": "recurrent hashtags",
+      "weight": 1
+    },
+    {
+      "name": "branding and visual similarities",
+      "weight": 1
+    },
+    {
+      "name": "repeated playbooks or tactics",
+      "weight": 1
+    }
+  ],
+}
