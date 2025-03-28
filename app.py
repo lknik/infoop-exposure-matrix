@@ -15,6 +15,7 @@ from flask import send_file,  render_template
 from openai import OpenAI
 import sqlite3
 from flask_cors import CORS
+from CONF import MODEL, API_KEY, BASE_URL 
 
 app = Flask(__name__)
 CORS(app)
@@ -308,10 +309,11 @@ def generate_report_api(operation_id):
         return jsonify({"error": "Failed to generate the report."}), 500
 
 # Function to generate the LLM report
-MODEL='hf.co/unsloth/phi-4-GGUF:Q8_0'
+
+ 
 client = OpenAI(
-        api_key='ollama',
-        base_url=f"http://localhost:11434/v1"
+        api_key=API_KEY,
+        base_url= BASE_URL
     )
 
 def craft_prompt(operation_id, analyst_comments, model=MODEL):
