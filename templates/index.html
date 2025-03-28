@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,101 +6,122 @@
   <title>FIMI Operation Analyzer</title>
   <script src="{{ url_for('static', filename='logic.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <div class="container">
   <h1>FIMI Operation Analyzer</h1>
   <div id="notifier" class="notifier"></div>
+  <div class="pane-layout">
+    <!-- Left Column: Input Controls -->
+    <div class="pane pane-left">
+      <!-- OPERATION MANAGEMENT -->
+      <section>
+        <h2>Create or Load Operation</h2>
+        <label>Name: <input type="text" id="op_name"> <span class="info" title="Unique name of the operation under analysis.">i</span></label>
+        <label>Description: <input type="text" id="op_description"> <span class="info" title="Context or summary of the operation's goals.">i</span></label>
+        <label>Suspected Actor: <input type="text" id="op_actor"> <span class="info" title="State or actor potentially behind the operation.">i</span></label>
+        <label>Region: <input type="text" id="op_region"> <span class="info" title="Primary geographic focus of the operation.">i</span></label>
+        <label>Time Range: <input type="text" id="op_range"> <span class="info" title="Estimated active period. Example: Jan–Mar 2024.">i</span></label>
+        <button onclick="createOperation()">Create Operation</button>
+        <hr>
+        <h3>Or Load Existing Operation</h3>
 
+        <label for="op_select">Select Operation:</label>
+        <select id="op_select" onchange="loadOperation()"></select>
+        
+        <!-- Add space and separate block -->
+        <div class="danger-zone">
+          <p style="font-size: 14px; color: #555; margin-bottom: 5px;">Delete the currently selected operation. This action is irreversible.</p>
+          <button onclick="deleteOperation()" class="danger">Delete Current Operation</button>
+        </div>
+                              </section>
 
-  <!-- OPERATION MANAGEMENT -->
-  <section>
-    <h2>Create New Operation</h2>
-    <label>Name: <input type="text" id="op_name"></label><br>
-    <label>Description: <input type="text" id="op_description"></label><br>
-    <label>Suspected Actor: <input type="text" id="op_actor"></label><br>
-    <label>Region: <input type="text" id="op_region"></label><br>
-    <label>Time Range: <input type="text" id="op_range"></label><br>
-    <button onclick="createOperation()">Create Operation</button>
-    <hr>
-    <h3>Or Load Existing Operation</h3>
-    <select id="op_select" onchange="loadOperation()"></select>
-    <button onclick="deleteOperation()">Delete Current Operation</button>
+      <!-- CHANNELS -->
+      <section>
+        <h2>Add Channel</h2>
+        <label>Name: <input type="text" id="ch_name"> <span class="info" title="Channel, site, or alias name.">i</span></label>
+        <label>Platform: <input type="text" id="ch_platform"> <span class="info" title="e.g. Twitter, Telegram, blog URL, etc.">i</span></label>
+        <label>URL: <input type="text" id="ch_url"> <span class="info" title="Direct link to the source or page.">i</span></label>
+        <label>Notes: <input type="text" id="ch_notes"> <span class="info" title="Any analyst observations or labels.">i</span></label>
+        <button onclick="addChannel()">Add Channel</button>
+        <div id="channel_list"></div>
+      </section>
 
-  </section>
+      <!-- INDICATORS -->
+      <section>
+        <h2>Add Indicator</h2>
+        <label>Channel: <select id="ind_channel"></select> <span class="info" title="Target channel to which this indicator applies.">i</span></label>
+        <label>Group: <select id="ind_group">
+          <option value="">--</option>
+          <option value="technical">Technical</option>
+          <option value="behavioral">Behavioral</option>
+        </select> <span class="info" title="Select the nature of the indicator.">i</span></label>
+        <label>Category: <select id="ind_category"></select></label>
+        <label>Subtype: <select id="ind_subtype"></select></label>
+        <label>Weight: <input type="number" id="ind_weight" readonly></label>
+        <label>Confidence: <input type="text" id="ind_conf" readonly></label>
+        <label>Evidence: <textarea id="ind_evidence" rows="2"></textarea></label>
+        <label>Source Type: <input type="text" id="ind_source"></label>
+        <button onclick="addIndicator()">Add Indicator</button>
+        <div id="indicators_view"></div>
+      </section>
 
-  <!-- CHANNELS -->
-  <section>
-    <h2>Add Channel to Operation</h2>
-    <label>Name: <input type="text" id="ch_name"></label><br>
-    <label>Platform: <input type="text" id="ch_platform"></label><br>
-    <label>URL: <input type="text" id="ch_url"></label><br>
-    <label>Notes: <input type="text" id="ch_notes"></label><br>
-    <button onclick="addChannel()">Add Channel</button>
-    <div id="channel_list"></div>
-  </section>
-
-  <!-- INDICATORS -->
-  <section>
-    <h2>Add Structured Indicator to Channel</h2>
-    <label>Channel: <select id="ind_channel"></select></label><br>
-    <label>Group:
-      <select id="ind_group">
-        <option value="">--</option>
-        <option value="technical">Technical</option>
-        <option value="behavioral">Behavioral</option>
-      </select>
-    </label><br>
-    <label>Category:
-      <select id="ind_category"></select>
-    </label><br>
-    <label>Subtype:
-      <select id="ind_subtype"></select>
-    </label><br>
-    <label>Weight: <input type="number" id="ind_weight" readonly></label><br>
-    <label>Confidence: <input type="text" id="ind_conf" readonly></label><br>
-    <label>Evidence: <textarea id="ind_evidence" rows="2"></textarea></label><br>
-    <label>Source Type: <input type="text" id="ind_source"></label><br>
-    <button onclick="addIndicator()">Add Indicator</button>
-    <div id="indicators_view"></div>
-  </section>
-  
-  <!-- RELATIONSHIPS -->
-  <section>
-    <h2>Link Channels</h2>
-    <label>From: <select id="link_from"></select></label>
-    <label>To: <select id="link_to"></select></label><br>
-    <label>Type of Link: <input type="text" id="link_type"></label><br>
-    <label>Confidence: <input type="text" id="link_conf"></label><br>
-    <label>Evidence: <textarea id="link_evidence" rows="2"></textarea></label><br>
-    <button onclick="addLink()">Add Link</button>
-    <div id="link_view"></div>
-  </section>
-
-  <!-- CLASSIFY -->
-
-  <section>
-    <h2>Classification & Exposure Matrix</h2>
-    <button onclick="runClassification()">Classify Operation</button>
-    <div id="classification_results"></div>
-    <h3>Visual Exposure Matrix</h3>
-<div id="matrix_grid" class="matrix-grid"></div>
-
-  </section>
-  
-  <section>
-    <h2>Generate Analyst Report</h2>
-    <label>Analyst Comments:</label><br>
-    <textarea id="analyst_notes" rows="4" placeholder="Add analyst context or interpretation..."></textarea><br>
-    <button onclick="generateReport()">Generate Report</button>
-    <div id="report_output_container" style="margin-top: 15px;">
-      <h3>Generated Report:</h3>
-      <textarea id="llm_report_output" rows="15" readonly style="width:100%; font-family:monospace;"></textarea>
+      <!-- RELATIONSHIPS -->
+      <section>
+        <h2>Link Channels</h2>
+        <label>From: <select id="link_from"></select></label>
+        <label>To: <select id="link_to"></select></label>
+        <label>Type of Link: <input type="text" id="link_type"></label>
+        <label>Confidence: <input type="text" id="link_conf"></label>
+        <label>Evidence: <textarea id="link_evidence" rows="2"></textarea></label>
+        <button onclick="addLink()">Add Link</button>
+        <div id="link_view"></div>
+      </section>
     </div>
-  </section>
-  
-  
 
+    <!-- Right Column: Outputs & Actions -->
+    <div class="pane pane-right">
+      <!-- CLASSIFY -->
+      <section>
+        <h2>Classification</h2>
+        <button onclick="runClassification()">Run Classification</button>
+        <div id="classification_results"></div>
+        <h3>Exposure Matrix</h3>
+        <div id="matrix_grid" class="matrix-grid"></div>
+      </section>
+
+      <!-- REPORTING -->
+
+
+<section>
+  <h2>Generate Analyst Report</h2>
+
+  <label>Analyst Notes:</label>
+  <textarea id="analyst_notes" rows="4" placeholder="Add analyst context or interpretation..."></textarea>
+
+  <button onclick="generateReport()">Generate Report</button>
+  <button onclick="downloadStix()">Download STIX</button>
+  <button onclick="exportReportAsPDF()">Export Report as PDF</button>
+
+  <div id="report_output_container" style="margin-top: 15px;">
+    <h3>Generated Report</h3>
+    <div id="llm_rendered_output" class="rendered-output" style="
+      padding: 15px;
+      background: #fefefe;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      line-height: 1.6;
+      font-size: 16px;
+    "></div>
+  </div>
+</section>
+
+
+
+</div>
+  </div>
 </div>
 </body>
 </html>

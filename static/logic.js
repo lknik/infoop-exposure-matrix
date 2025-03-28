@@ -357,36 +357,58 @@ function runClassification() {
 
 // Function to trigger report generation
 function generateReport() {
-    if (!currentOperationId) {
-      notify("Please select an operation first.");
-      return;
-    }
+  const notes = document.getElementById("analyst_notes").value;
+  const opId = document.getElementById("op_select").value;
+
+  fetch(`/generate_report/${opId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ analyst_comments: notes })
+  })
+    .then(res => res.json())
+    .then(data => {
+      const rawMarkdown = data.report || "No output returned.";
+      renderMarkdownOutput(rawMarkdown);
+    });
+}
+
+
+
+function renderMarkdownOutput(raw) {
+  const html = marked.parse(raw);
+  document.getElementById("llm_rendered_output").innerHTML = html;
+}
   
-    const notes = document.getElementById('analyst_notes').value;
-  
-    fetch(`/generate_report/${currentOperationId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ analyst_comments: notes })
-    })
-      .then(res => {
-        console.log("Response received:", res);  // Debugging
-        return res.json();  // Parse the JSON response
-      })
-      .then(data => {
-        console.log("Data from backend:", data);  // Debugging
-        if (data.report) {
-          document.getElementById('llm_report_output').value = data.report;
-          notify("Report generated.");
-        } else {
-          notify("Failed to generate report.");
-        }
-      })
-      .catch(error => {
-        // Catch any errors that occur during the fetch call
-        const outputDiv = document.getElementById('llm_report_output');
-        outputDiv.innerHTML = "An error occurred: " + error.message;
-        console.error('Error:', error);
-      });
+function exportReportAsPDF() {
+  const element = document.getElementById("llm_rendered_output");
+  const opt = {
+    margin:       0.5,
+    filename:     'FIMI_Report.pdf',
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+}
+
+
+function downloadStix() {
+  const opSelect = document.getElementById("op_select");
+  const opId = opSelect.value;
+  if (!opId) {
+    alert("No operation selected.");
+    return;
   }
-    
+  fetch(`/export_stix/${opId}`)
+    .then(res => res.json())
+    .then(data => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fimi_operation_${opId}.stix.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+}

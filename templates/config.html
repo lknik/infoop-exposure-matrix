@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Configuration Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; background-color: #f7f7f7; }
+    h1 { margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #e0e0e0; }
+    input, select, textarea { width: 100%; padding: 6px; margin-top: 5px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc; }
+    .form-section { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 30px; }
+    button { padding: 8px 16px; background-color: #2d7ef7; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background-color: #1a5edb; }
+  </style>
+</head>
+<body>
+  <h1>Configuration Panel</h1>
+
+  <div class="form-section">
+    <h2>Indicator Types</h2>
+    <table id="indicatorTable">
+      <thead>
+        <tr>
+          <th>Group</th><th>Category</th><th>Subtype</th><th>Weight</th><th>Confidence</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <h3>Add New Indicator</h3>
+    <select id="group_type"><option value="technical">Technical</option><option value="behavioral">Behavioral</option></select>
+    <input type="text" id="category" placeholder="Category">
+    <input type="text" id="subtype" placeholder="Subtype">
+    <input type="number" id="weight" min="1" max="5" placeholder="Weight">
+    <select id="confidence"><option>High</option><option>Medium</option><option>Low</option></select>
+    <button onclick="addIndicatorType()">Add Indicator</button>
+  </div>
+
+  <div class="form-section">
+    <h2>Operations</h2>
+    <table id="operationsTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Name</th><th>Actor</th><th>Region</th><th>Time Range</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <h3>Edit Operation</h3>
+    <input type="hidden" id="edit_id">
+    <input type="text" id="edit_name" placeholder="Operation Name">
+    <textarea id="edit_description" placeholder="Description"></textarea>
+    <input type="text" id="edit_actor" placeholder="Suspected Actor">
+    <input type="text" id="edit_region" placeholder="Region">
+    <input type="text" id="edit_range" placeholder="Time Range">
+    <button onclick="saveOperationEdit()">Save Changes</button>
+  </div>
+
+  <script>
+    async function loadIndicators() {
+      const res = await fetch('/api/indicator_types');
+      const data = await res.json();
+      const tbody = document.querySelector("#indicatorTable tbody");
+      tbody.innerHTML = '';
+      data.forEach(ind => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${ind.group_type}</td><td>${ind.category}</td><td>${ind.subtype}</td><td>${ind.default_weight}</td><td>${ind.default_confidence}</td><td><button onclick="deleteIndicator(${ind.id})">Delete</button></td>`;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function addIndicatorType() {
+      const payload = {
+        group_type: document.getElementById("group_type").value,
+        category: document.getElementById("category").value,
+        subtype: document.getElementById("subtype").value,
+        default_weight: parseInt(document.getElementById("weight").value),
+        default_confidence: document.getElementById("confidence").value
+      };
+      await fetch('/api/indicator_types', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      loadIndicators();
+    }
+
+    async function deleteIndicator(id) {
+      await fetch(`/api/indicator_types/${id}`, { method: 'DELETE' });
+      loadIndicators();
+    }
+
+    async function loadOperations() {
+      const res = await fetch('/api/operations');
+      const data = await res.json();
+      const tbody = document.querySelector("#operationsTable tbody");
+      tbody.innerHTML = '';
+      data.forEach(op => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${op.id}</td><td>${op.name}</td><td>${op.suspected_actor}</td><td>${op.region}</td><td>${op.time_range}</td><td><button onclick="editOperation(${op.id}, '${op.name}', '${op.description}', '${op.suspected_actor}', '${op.region}', '${op.time_range}')">Edit</button></td>`;
+        tbody.appendChild(row);
+      });
+    }
+
+    function editOperation(id, name, desc, actor, region, range) {
+      document.getElementById("edit_id").value = id;
+      document.getElementById("edit_name").value = name;
+      document.getElementById("edit_description").value = desc;
+      document.getElementById("edit_actor").value = actor;
+      document.getElementById("edit_region").value = region;
+      document.getElementById("edit_range").value = range;
+    }
+
+    async function saveOperationEdit() {
+      const id = document.getElementById("edit_id").value;
+      const payload = {
+        name: document.getElementById("edit_name").value,
+        description: document.getElementById("edit_description").value,
+        suspected_actor: document.getElementById("edit_actor").value,
+        region: document.getElementById("edit_region").value,
+        time_range: document.getElementById("edit_range").value
+      };
+      await fetch(`/api/operations/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      loadOperations();
+    }
+
+    window.onload = () => {
+      loadIndicators();
+      loadOperations();
+    }
+  </script>
+</body>
+</html>

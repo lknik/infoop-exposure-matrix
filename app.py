@@ -1,3 +1,4 @@
+from classification import classify_channel
 """
 Flask backend for FIMI Operations classification and analysis platform.
 
@@ -8,8 +9,8 @@ Supports:
 - Mapping relationships between channels
 """
 
-from flask import Flask, request, jsonify
-from flask import render_template
+from flask import send_file,  Flask, request, jsonify
+from flask import send_file,  render_template
  
 from openai import OpenAI
 import sqlite3
@@ -297,7 +298,6 @@ def classify_operation(op_id):
 @app.route('/generate_report/<int:operation_id>', methods=['POST'])
 def generate_report_api(operation_id):
     analyst_comments = request.json.get('analyst_comments', '')  # Getting analyst comments from request body
-    print("!!!!")
 
     # Get the LLM report
     report = generate_llm_report(operation_id, analyst_comments, model=MODEL)
@@ -308,13 +308,10 @@ def generate_report_api(operation_id):
         return jsonify({"error": "Failed to generate the report."}), 500
 
 # Function to generate the LLM report
-MODEL=''
-API_KEY=''
-URL= ''
-
+MODEL='hf.co/unsloth/phi-4-GGUF:Q8_0'
 client = OpenAI(
-        api_key=API_KEY,
-        base_url=URL
+        api_key='ollama',
+        base_url=f"http://localhost:11434/v1"
     )
 
 def craft_prompt(operation_id, analyst_comments, model=MODEL):
@@ -425,8 +422,179 @@ def generate_llm_report(operation_id, analyst_comments, model=MODEL):
 
 
 
-# ------------------------
+@app.route("/export_stix/<int:operation_id>")
+def export_stix(operation_id):
+    import uuid
+    from flask import jsonify
+
+    conn = sqlite3.connect("fimi_ops.db")
+    cursor = conn.cursor()
+
+    # Load the operation
+    cursor.execute("SELECT * FROM operations WHERE id = ?", (operation_id,))
+    op = cursor.fetchone()
+    if not op:
+        return jsonify({"error": "Operation not found"}), 404
+
+    op_id, op_name, op_desc, op_actor, op_region, op_range, *_ = op
+    print(f"[STIX Export] Operation loaded: {op_name}")
+
+    # Campaign object
+    campaign = {
+        "type": "campaign",
+        "id": f"campaign--{uuid.uuid4()}",
+        "name": op_name,
+        "description": op_desc,
+        "aliases": [op_actor],
+        "first_seen": "2022-01-01T00:00:00.000Z",
+        "objective": "Attributed influence operation",
+        "created": "2025-01-01T00:00:00.000Z",
+        "modified": "2025-01-01T00:00:00.000Z"
+    }
+
+    # Channels (as identity objects)
+    cursor.execute("SELECT * FROM channels WHERE operation_id = ?", (operation_id,))
+    channels = cursor.fetchall()
+    print(f"[STIX Export] Channels found: {len(channels)}")
+
+    channel_objs = []
+    channel_map = {}
+
+    for ch in channels:
+        ch_id, _, name, platform, url, notes = ch
+        ident_id = f"identity--{uuid.uuid4()}"
+        channel_map[ch_id] = ident_id
+        ident = {
+            "type": "identity",
+            "id": ident_id,
+            "name": name,
+            "identity_class": "organization",
+            "sectors": [platform],
+            "contact_information": url,
+            "description": notes,
+            "created": "2025-01-01T00:00:00.000Z",
+            "modified": "2025-01-01T00:00:00.000Z"
+        }
+        channel_objs.append(ident)
+
+    # Indicators
+    cursor.execute("SELECT * FROM indicators WHERE channel_id IN (SELECT id FROM channels WHERE operation_id = ?)", (operation_id,))
+    indicators = cursor.fetchall()
+    print(f"[STIX Export] Indicators found: {len(indicators)}")
+
+    indicator_objs = []
+    for ind in indicators:
+        ind_id, ch_id, group_type, name, weight, confidence, evidence, source_type, *rest = ind
+        timestamp = rest[0] if rest else "2025-01-01T00:00:00.000Z"
+
+        # Clean up values
+        clean_name = name if isinstance(name, str) else f"Indicator-{ind_id}"
+        conf = confidence.lower() if confidence else "medium"
+
+        indicator_obj = {
+            "type": "indicator",
+            "id": f"indicator--{uuid.uuid4()}",
+            "labels": [group_type, name],
+            "name": clean_name,
+            "description": evidence,
+            "confidence": conf,
+            "valid_from": timestamp,
+            "pattern": f"[x-fimi:indicator = '{clean_name}']",
+            "created": "2025-01-01T00:00:00.000Z",
+            "modified": "2025-01-01T00:00:00.000Z"
+        }
+        indicator_objs.append(indicator_obj)
+
+    # Relationships
+    cursor.execute("SELECT * FROM channel_links WHERE operation_id = ?", (operation_id,))
+    links = cursor.fetchall()
+    print(f"[STIX Export] Links found: {len(links)}")
+
+    rel_objs = []
+    for link in links:
+        link_id, op_id, from_ch, to_ch, link_type, link_conf, link_evid = link
+        if from_ch not in channel_map or to_ch not in channel_map:
+            continue
+        rel = {
+            "type": "relationship",
+            "id": f"relationship--{uuid.uuid4()}",
+            "relationship_type": link_type,
+            "description": link_evid,
+            "source_ref": channel_map[from_ch],
+            "target_ref": channel_map[to_ch],
+            "confidence": link_conf.lower() if link_conf else "medium",
+            "created": "2025-01-01T00:00:00.000Z",
+            "modified": "2025-01-01T00:00:00.000Z"
+        }
+        rel_objs.append(rel)
+
+    conn.close()
+
+    # Final STIX bundle
+    bundle = {
+        "type": "bundle",
+        "id": f"bundle--{uuid.uuid4()}",
+        "objects": [campaign] + channel_objs + indicator_objs + rel_objs
+    }
+
+    print("[STIX Export] Bundle ready with total objects:", len(bundle["objects"]))
+    return jsonify(bundle)
+
+@app.route('/config')
+def config():
+    return render_template("config.html")
+
+# --- API: Indicator Types ---
+@app.route('/api/indicator_types', methods=['GET'])
+def api_get_indicator_types():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM indicator_types").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/indicator_types', methods=['POST'])
+def api_add_indicator_type():
+    data = request.json
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO indicator_types (group_type, category, subtype, default_weight, default_confidence)
+        VALUES (?, ?, ?, ?, ?)
+    """, (data['group_type'], data['category'], data['subtype'], data['default_weight'], data['default_confidence']))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+@app.route('/api/indicator_types/<int:indicator_id>', methods=['DELETE'])
+def api_delete_indicator_type(indicator_id):
+    conn = get_db()
+    conn.execute("DELETE FROM indicator_types WHERE id = ?", (indicator_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "deleted"})
+
+# --- API: Operations ---
+@app.route('/api/operations', methods=['GET'])
+def api_get_operations():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM operations").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/operations/<int:operation_id>', methods=['PUT'])
+def api_update_operation(operation_id):
+    data = request.json
+    conn = get_db()
+    conn.execute("""
+        UPDATE operations SET
+        name = ?, description = ?, suspected_actor = ?, region = ?, time_range = ?
+        WHERE id = ?
+    """, (data['name'], data['description'], data['suspected_actor'], data['region'], data['time_range'], operation_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "updated"})
+
 
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
+
