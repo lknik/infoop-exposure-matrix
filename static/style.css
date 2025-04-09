@@ -138,3 +138,17 @@ button.danger {
 button.danger:hover {
   background-color: #c62828;
 }
+
+#indicatorChart {
+  max-width: 100%;
+  margin-top: 20px;
+}
+
+#channel_link_graph {
+  width: 100%;
+  min-height: 600px;
+  max-height: 1000px;
+  overflow: auto;
+  border: 1px solid #ccc;
+  background-color: #fff;
+}

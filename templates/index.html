@@ -1,10 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>FIMI Operation Analyzer</title>
-  <script src="{{ url_for('static', filename='logic.js') }}"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='logic.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -14,8 +15,10 @@
   <h1>FIMI Operation Analyzer</h1>
   <div id="notifier" class="notifier"></div>
   <div class="pane-layout">
+
     <!-- Left Column: Input Controls -->
     <div class="pane pane-left">
+
       <!-- OPERATION MANAGEMENT -->
       <section>
         <h2>Create or Load Operation</h2>
@@ -27,16 +30,14 @@
         <button onclick="createOperation()">Create Operation</button>
         <hr>
         <h3>Or Load Existing Operation</h3>
-
         <label for="op_select">Select Operation:</label>
         <select id="op_select" onchange="loadOperation()"></select>
-        
-        <!-- Add space and separate block -->
+
         <div class="danger-zone">
           <p style="font-size: 14px; color: #555; margin-bottom: 5px;">Delete the currently selected operation. This action is irreversible.</p>
           <button onclick="deleteOperation()" class="danger">Delete Current Operation</button>
         </div>
-                              </section>
+      </section>
 
       <!-- CHANNELS -->
       <section>
@@ -53,11 +54,14 @@
       <section>
         <h2>Add Indicator</h2>
         <label>Channel: <select id="ind_channel"></select> <span class="info" title="Target channel to which this indicator applies.">i</span></label>
-        <label>Group: <select id="ind_group">
-          <option value="">--</option>
-          <option value="technical">Technical</option>
-          <option value="behavioral">Behavioral</option>
-        </select> <span class="info" title="Select the nature of the indicator.">i</span></label>
+        <label>Group: 
+          <select id="ind_group">
+            <option value="">--</option>
+            <option value="technical">Technical</option>
+            <option value="behavioral">Behavioral</option>
+          </select>
+          <span class="info" title="Select the nature of the indicator.">i</span>
+        </label>
         <label>Category: <select id="ind_category"></select></label>
         <label>Subtype: <select id="ind_subtype"></select></label>
         <label>Weight: <input type="number" id="ind_weight" readonly></label>
@@ -83,44 +87,55 @@
 
     <!-- Right Column: Outputs & Actions -->
     <div class="pane pane-right">
-      <!-- CLASSIFY -->
+
+      <!-- CLASSIFICATION -->
       <section>
         <h2>Classification</h2>
         <button onclick="runClassification()">Run Classification</button>
         <div id="classification_results"></div>
+
         <h3>Exposure Matrix</h3>
         <div id="matrix_grid" class="matrix-grid"></div>
+
+        <div></div>
+        <h3>Indicator Weights and Confidence</h3>
+        <canvas id="indicatorHeatmap" width="400" height="200"></canvas>
+
+      </section>
+
+      <!-- CHART -->
+      <section>
+
+        <h3>Channel Link Flow</h3>
+        <div id="channel_link_graph" style="max-width: 100%;"></div>
+              
       </section>
 
       <!-- REPORTING -->
+      <section>
+        <h2>Generate Analyst Report</h2>
 
+        <label>Analyst Notes:</label>
+        <textarea id="analyst_notes" rows="4" placeholder="Add analyst context or interpretation..."></textarea>
 
-<section>
-  <h2>Generate Analyst Report</h2>
+        <button onclick="generateReport()">Generate Report</button>
+        <button onclick="downloadStix()">Download STIX</button>
+        <button onclick="exportReportAsPDF()">Export Report as PDF</button>
 
-  <label>Analyst Notes:</label>
-  <textarea id="analyst_notes" rows="4" placeholder="Add analyst context or interpretation..."></textarea>
+        <div id="report_output_container" style="margin-top: 15px;">
+          <h3>Generated Report</h3>
+          <div id="llm_rendered_output" class="rendered-output" style="
+            padding: 15px;
+            background: #fefefe;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            line-height: 1.6;
+            font-size: 16px;
+          "></div>
+        </div>
+      </section>
 
-  <button onclick="generateReport()">Generate Report</button>
-  <button onclick="downloadStix()">Download STIX</button>
-  <button onclick="exportReportAsPDF()">Export Report as PDF</button>
-
-  <div id="report_output_container" style="margin-top: 15px;">
-    <h3>Generated Report</h3>
-    <div id="llm_rendered_output" class="rendered-output" style="
-      padding: 15px;
-      background: #fefefe;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      line-height: 1.6;
-      font-size: 16px;
-    "></div>
-  </div>
-</section>
-
-
-
-</div>
+    </div>
   </div>
 </div>
 </body>

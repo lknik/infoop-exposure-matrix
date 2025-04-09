@@ -595,8 +595,52 @@ def api_update_operation(operation_id):
     conn.close()
     return jsonify({"status": "updated"})
 
+@app.route('/api/operations_data/<int:operation_id>', methods=['GET'])
+def get_operation_data(operation_id):
+    import sqlite3
+
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    # Get operation
+    operation = cursor.execute("SELECT * FROM operations WHERE id = ?", (operation_id,)).fetchone()
+    if not operation:
+        return jsonify({"error": "Operation not found"}), 404
+
+    # Get channels
+    channels = cursor.execute("SELECT * FROM channels WHERE operation_id = ?", (operation_id,)).fetchall()
+    channel_ids = [row["id"] for row in channels]
+
+    # Get indicators
+    indicators = []
+    if channel_ids:
+        placeholders = ",".join("?" for _ in channel_ids)
+        indicators = cursor.execute(
+            f"SELECT * FROM indicators WHERE channel_id IN ({placeholders})", channel_ids
+        ).fetchall()
+
+    # Get channel links
+    links = cursor.execute(
+        "SELECT * FROM channel_links WHERE operation_id = ?", (operation_id,)
+    ).fetchall()
+
+    conn.close()
+
+    def serialize(rows):
+        return [dict(row) for row in rows]
+
+    return jsonify({
+        "operation": dict(operation),
+        "channels": serialize(channels),
+        "indicators": serialize(indicators),
+        "channel_links": serialize(links)
+    })
+
+
+#################################
+#################################
 
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
-
