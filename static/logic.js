@@ -320,6 +320,7 @@ function runClassification() {
         }).join('');
         grid.appendChild(box);
       });
+      
 
       // === OPERATIONAL DATA FETCH FOR VISUALIZATIONS ===
       fetch(`/api/operations_data/${currentOperationId}`)
