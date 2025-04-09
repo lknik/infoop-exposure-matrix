@@ -99,3 +99,10 @@ http://127.0.0.1:5000/
 Additional expert source in [my book](https://www.routledge.com/Propaganda-From-Disinformation-and-Influence-to-Operations-and-Information-Warfare/Olejnik/p/book/9781032813721)
 
 me@lukaszolejnik.com
+
+## UI.
+![R](https://github.com/user-attachments/assets/492b00fd-774b-47fc-9c61-cbe390c50210)
+
+
+![L](https://github.com/user-attachments/assets/3b7cfd83-c4c7-4538-9798-074c1ffa7619)
+
